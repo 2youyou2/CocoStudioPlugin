@@ -1,0 +1,4 @@
+CocoStudioPlugin
+================
+
+CocoStudioPlugin for Flash
