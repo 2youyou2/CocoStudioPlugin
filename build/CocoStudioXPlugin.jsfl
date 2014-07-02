@@ -64,21 +64,61 @@ var csx = {};
 
     var projectName;
     var exportPath;
+
+    var jsonList;
     
     //////////////////////////////////////////////////////////////////////////////////////////////
     // export struct
     function AnimationElement(){
-        this.node   = new Node;
-        this.action = new Action;
+        this.version  = '1.5.0.0';
+        this.designWidth = 480;
+        this.designHeight= 320;
+        this.dataScale= 1.0;
+        this.nodeTree = new Node;
+        this.action   = new Action;
 
-        this.node.nodeType   = "Node";
+        this.nodeTree.setClassName("Node");
+        this.nodeTree.options.$type = "EditorCommon.JsonModel.Component.GUI.RootGUISurrogate, EditorCommon";
     }
-
     function Node(){
-        this.name       = "";
-        this.nodeType   = "";
-        this.actionTag  = 0;
-        this.children   = [];
+        this.classname          = "Sprite";
+
+        this.options            = {};
+        this.options.$type = "EditorCommon.JsonModel.Component.GUI.SpriteSurrogate, EditorCommon";
+        this.options.name       = "Sprite";
+        this.options.classname  = "Sprite";
+        this.options.actionTag  = 0;
+
+        this.options.x = 0;
+        this.options.y = 0;
+        this.options.scaleX = 1.0;
+        this.options.scaleY = 1.0;
+        this.options.rotation = 0.0;
+        this.options.flipX = false;
+        this.options.flipY = false;
+        this.options.colorR = 255;
+        this.options.colorG = 255;
+        this.options.colorB = 255;
+        this.options.opacity = 255;
+        this.options.visible = true;
+        this.options.ZOrder = 0;
+        this.options.fileName = "";
+
+        this.children           = [];
+
+        this.setClassName = function(classname){
+            this.classname = classname;
+            this.options.classname = classname;
+        }
+
+        this.setFileName = function(name){
+            this.options.fileName = name;
+            this.options.fileNameData = {
+                resourceType:0,
+                path:name,
+                plistFile:''
+            };
+        }
     }
 
     function Action(){
@@ -107,11 +147,13 @@ var csx = {};
 
 
     function VisibleFrame(frameIndex, visible){
+        this.$type = "EditorCommon.JsonModel.Animation.TimeLineBoolFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
-        this.visible    = visible;
+        this.value    = visible;
     }
 
     function PositionFrame(frameIndex, tween, x, y){
+        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
@@ -119,54 +161,60 @@ var csx = {};
         this.y = y;
 
         this.applyNode = function(node){
-            node.x = this.x;
-            node.y = this.y;
+            node.options.x = this.x;
+            node.options.y = this.y;
         }
     }
 
-    function ScaleFrame(frameIndex, tween, scalex, scaley){
+    function ScaleFrame(frameIndex, tween, scaleX, scaleY){
+
+        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
-        this.scalex = scalex;
-        this.scaley = scaley;
+        this.x = scaleX;
+        this.y = scaleY;
 
         this.applyNode = function(node){
-            node.scalex = this.scalex;
-            node.scaley = this.scaley;
+            node.options.scaleX = this.x;
+            node.options.scaleY = this.y;
         }
     }
 
-    function RotationFrame(frameIndex, tween, rotation){
+//     function RotationFrame(frameIndex, tween, rotation){
+//         this.frameIndex = frameIndex;
+//         this.tween = tween;
+// 
+//         this.rotation = rotation;
+//     }
+
+    function RotationSkewFrame(frameIndex, tween, skewx, skewy){
+
+        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
-        this.rotation = rotation;
-    }
-
-    function SkewFrame(frameIndex, tween, skewx, skewy){
-        this.frameIndex = frameIndex;
-        this.tween = tween;
-
-        this.rotationSkewX = skewx;
-        this.rotationSkewY = skewy;
+        this.x = skewx;
+        this.y = skewy;
 
         this.applyNode = function(node){
-            node.rotationSkewX = this.rotationSkewX;
-            node.rotationSkewY = this.rotationSkewY;
+            node.options.rotationSkewX = this.x;
+            node.options.rotationSkewY = this.y;
         }
     }
 
-    function AnchorFrame(frameIndex, anchorx, anchory){
+    function AnchorFrame(frameIndex, anchorPointX, anchorPointY){
+        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
 
-        this.anchorx = anchorx;
-        this.anchory = anchory;
+        this.x = anchorPointX;
+        this.y = anchorPointY;
 
         this.applyNode = function(node){
-            node.anchorx = this.anchorx;
-            node.anchory = this.anchory;
+            node.options.anchorPointX = this.x;
+            node.options.anchorPointY = this.y;
         }
+
     }
 
     function InnerActionFrame(frameIndex, innerActionType, startFrame){
@@ -177,6 +225,8 @@ var csx = {};
     }
 
     function ColorFrame(frameIndex, tween, colorAlphaPercent, colorRedPercent, colorGreenPercent, colorBluePercent){
+
+        this.$type = "EditorCommon.JsonModel.Animation.TimeLineColorFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
@@ -186,10 +236,10 @@ var csx = {};
         this.blue   = colorBluePercent;
 
         this.applyNode = function(node){
-            node.alpha  = this.alpha;
-            node.red    = this.red;
-            node.green  = this.green;
-            node.blue   = this.blue;
+            node.options.alpha  = this.alpha;
+            node.options.red    = this.red;
+            node.options.green  = this.green;
+            node.options.blue   = this.blue;
         }
     }
 
@@ -257,36 +307,37 @@ var csx = {};
     function findNodeForLayer(layer, element){
         var nodes = layer.node.children;
         for(var i=0; i<nodes.length; i++){
-            if(nodes[i].filePath == getRelativePath(getElementName(element))){
+            if(nodes[i].options.fileName == getRelativePath(getElementName(element))){
                 return nodes[i];
             }
         }
 
-        var id = currentItem.element.node.name + "_" + (++currentItem.actionTag);
+        var id = currentItem.element.nodeTree.options.name + "_" + (++currentItem.actionTag);
         
         var node = new Node();
-        node.nodeType = "Sprite";
-        node.name = "Sprite";
-        node.actionTag = hashCode(id);
+//        node.setClassName("Sprite");
+//        node.options.name = "Sprite";
+        node.options.actionTag = hashCode(id);
         
         // save shape to png
         if(element.elementType == 'shape'){
             saveShapeToPng(element);
         }
 
-        if(element.instanceType == 'symbol'){
-            node.nodeType = "Node";
-            node.name = "Node";
-        }
+//         if(element.instanceType == 'symbol'){
+//             node.setClassName("Node");
+//         }
         
         //for template use, need delete when export
         node.timelines  = [];
 
         //trace(id+" actionTag: " + node.actionTag);
 
-        node.filePath = getElementName(element);
-        node.filePath = getRelativePath(node.filePath);
-        trace("create node : " + node.filePath);
+        var filename = getElementName(element);
+        filename = getRelativePath(filename);
+        node.setFileName(filename);
+//        node.options.fileName = getRelativePath(filename);
+        trace("create node : " + node.options.fileName);
 
 
         // add visible frame 
@@ -310,7 +361,7 @@ var csx = {};
 
     function saveShapeToPng(shape){
         shape.shapeName = currentItem.name + '_shape_' + currentItem.shapeIndex + '.png'; 
-        var bitmapName = getExportPath(shape.shapeName);
+        var bitmapName = getExportResourcePath(shape.shapeName);
         dom.selectNone();
         
         currentTimeline.setSelectedFrames(currentFrame.startFrame, currentFrame.startFrame);
@@ -351,7 +402,7 @@ var csx = {};
         if(!timeline){
             timeline = new Timeline(frameType);
             node.timelines.push(timeline);
-            timeline.actionTag = node.actionTag;
+            timeline.actionTag = node.options.actionTag;
         }
         return timeline;
     }
@@ -362,6 +413,23 @@ var csx = {};
 
     function getExportPath(path){
         return exportPath + path;
+    }    
+
+    function getExportResourcePath(path){
+        var p = exportPath + 'Resources/';
+        if(!FLfile.exists(p)){
+                FLfile.createFolder(p);
+        }
+        p = p + path;
+        return p;
+    }
+
+    function getExportJsonPath(){
+        var p = exportPath + 'Json/';
+        if(!FLfile.exists(p)){
+                FLfile.createFolder(p);
+        }
+        return p;
     }
 
     function getRelativePath(path){
@@ -383,17 +451,55 @@ var csx = {};
 
         createTempItem();
 
+        jsonList = [];
+        
         var items = lib.items;
         for(var i=0;i<items.length;i++){
             currentItem = items[i];
             convertCurrentItem();
         }
+        
+        var projectXML = '\
+<?xml version="1.0"?> \n \
+<UIProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"> \n \
+    <ProjectDir></ProjectDir> \n \
+    <Version>1.0.0.0</Version> \n \
+    <Resources></Resources> \n \
+    <Name>' + projectName +'</Name> \n \
+    <JsonFileName>boy.json</JsonFileName> \n \
+    <JsonFolder></JsonFolder> \n \
+    <JsonList>\n';
+
+    for(var i=0; i<jsonList.length; i++){
+        projectXML += '        <string>'+ jsonList[i] +'</string>\n';
+    }
+
+projectXML +='\
+     </JsonList> \n \
+    <CanvasSize> \n \
+        <Width>480</Width> \n \
+        <Height>320</Height> \n \
+    </CanvasSize> \n \
+    <filePath></filePath> \n \
+    <ProjectType>UIProject</ProjectType> \n \
+    <ResRelativePath /> \n \
+    <imageFileList /> \n \
+    <imagePngList /> \n \
+    <JsonSuffix>.json</JsonSuffix> \n \
+    <CurrentUIJson>boy_1.json</CurrentUIJson> \n \
+</UIProject>';
+
+//         var projectXML = new XML("<UIProject />");
+//         projectXML.@name = '123';
+
+        var xmlPath = getExportPath(projectName) + '.xml.ui';
+        FLfile.write(xmlPath, projectXML);
     }
 
     function convertCurrentItem(){
         trace("item : [type - " + currentItem.itemType + "], [name - " + currentItem.name + "]");
 
-        var fileName = getExportPath(currentItem.name);
+        var fileName = getExportResourcePath(currentItem.name);
 
         if(currentItem.itemType == 'movie clip' || currentItem.itemType == 'graphic'){
             if(currentItem.name == TEMP_ITEM_NAME) return;
@@ -420,7 +526,7 @@ var csx = {};
         currentTimeline = dom.getTimeline(); 
 
         var element = new AnimationElement();
-        element.node.name = currentItem.name;
+        element.nodeTree.options.name = currentItem.name;
         element.action.duration = currentTimeline.frameCount;
         element.action.speed = dom.frameRate / 60;
 
@@ -434,8 +540,13 @@ var csx = {};
             convertCurrentLayer();
         }
 
-        fileName += ".json";
-        FLfile.write(fileName,JSON.encode(element));
+        var jsonPath = getExportJsonPath();
+        var jsonName = currentItem.name.substring(currentItem.name.lastIndexOf('/')+1, currentItem.name.length) + '.json';
+
+        fileName = jsonPath + jsonName;
+        jsonList[jsonList.length] = jsonName;
+        trace("json : " + fileName);
+        FLfile.write(fileName, JSON.encode(element));
     }    
 
     function convertCurrentLayer(){
@@ -443,10 +554,13 @@ var csx = {};
         lastFrame = null;
 
         var node = new Node;
-        node.name = currentLayer.name;
-        node.nodeType = "Node";
+        node.setFileName("");
+        node.options.name = currentLayer.name;
+//        node.setClassName("Node");
 
-        currentItem.element.node.children.push(node);
+        currentItem.element.nodeTree.children.push(node);
+
+//        trace("nodeTree.children : " + currentItem.element.nodeTree.children.length);
 
         currentLayer.node = node;
         
@@ -511,7 +625,7 @@ var csx = {};
             }
 
             var scaleFrame      = new ScaleFrame   (frameIndex, tween, element.scaleX,     element.scaleY);
-            var skewFrame       = new SkewFrame    (frameIndex, tween, element.skewX,      element.skewY);
+            var skewFrame       = new RotationSkewFrame    (frameIndex, tween, element.skewX,      element.skewY);
 
             addFrameToTimeline(positionFrame,   getTimelineInNode(FrameType.POSITION,   node));
             addFrameToTimeline(scaleFrame,      getTimelineInNode(FrameType.SCALE,      node));
@@ -543,8 +657,8 @@ var csx = {};
             }
            
 //             trace("element.transformX : " + element.transformX + "  element.left : " + element.left);
-//             trace("anchorx :  " + anchorPoint.x + "   " + element.hPixels);
-//             trace("anchory :  " + anchorPoint.y + "   " + element.vPixels);
+//             trace("anchorPointX :  " + anchorPoint.x + "   " + element.hPixels);
+//             trace("anchorPointY :  " + anchorPoint.y + "   " + element.vPixels);
 
             anchorPoint.x = anchorPoint.x/element.hPixels;
             anchorPoint.y = (element.vPixels-anchorPoint.y)/element.vPixels;
@@ -554,7 +668,7 @@ var csx = {};
 
             if(anchorTimeline.frames.length>0){
                 var lastTimelineFrame = anchorTimeline.frames[anchorTimeline.frames.length-1];
-                if(anchorPoint.x != lastTimelineFrame.anchorx && anchorPoint.y != lastTimelineFrame.anchory)
+                if(anchorPoint.x != lastTimelineFrame.anchorPointX && anchorPoint.y != lastTimelineFrame.anchorPointY)
                     addFrameToTimeline(anchorFrame, anchorTimeline);
             }
             else{
