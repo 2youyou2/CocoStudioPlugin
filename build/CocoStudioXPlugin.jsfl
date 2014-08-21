@@ -2,6 +2,44 @@ var CocoStudioXPluginPath = fl.configURI + "WindowSWF/CocoStudioXPlugin";
 
 fl.runScript( CocoStudioXPluginPath + "/JSON.jsfl" );
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// XMLSerialize
+var XMLSerialize;
+
+(function(){
+    XMLSerialize = {
+        serialize:function(obj){
+            var xml = XML('<'+obj.constructor.name+'/>');
+            for(var p in obj){
+                var t = typeof(obj[p]);
+                
+                if(t == 'function') {
+                } else if (obj[p] != null && obj[p].constructor.name == 'Array'){
+                    if(obj[p].length == 0)
+                        continue;
+
+                    var arrayXml = XML('<'+p+'/>');
+                    var array = obj[p];
+                    for(var i = 0; i<array.length; i++){
+                        arrayXml.appendChild(this.serialize(array[i]));
+                    }
+                    xml.appendChild(arrayXml);
+                } else if(t == 'object') {
+                    xml.appendChild(this.serialize(obj[p]));
+                } else {
+                    xml.@[p] = obj[p];
+                }
+            }
+
+            return xml;
+        }
+    }
+})();
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// csx
 var csx = {};
 
 (function(){ 
@@ -69,51 +107,68 @@ var csx = {};
     
     //////////////////////////////////////////////////////////////////////////////////////////////
     // export struct
-    function AnimationElement(){
-        this.version  = '1.5.0.0';
-        this.designWidth = 480;
-        this.designHeight= 320;
-        this.dataScale= 1.0;
-        this.nodeTree = new Node;
-        this.action   = new Action;
-
-        this.nodeTree.setClassName("Node");
-        this.nodeTree.options.$type = "EditorCommon.JsonModel.Component.GUI.RootGUISurrogate, EditorCommon";
+    function Position(x, y){
+        this.X = x;
+        this.Y = y;
     }
-    function Node(){
-        this.classname          = "Sprite";
 
-        this.options            = {};
-        this.options.$type = "EditorCommon.JsonModel.Component.GUI.SpriteSurrogate, EditorCommon";
-        this.options.name       = "Sprite";
-        this.options.classname  = "Sprite";
-        this.options.actionTag  = 0;
+    function Scale(x, y){
+        this.ScaleX = x;
+        this.ScaleY = y;
+    }
 
-        this.options.x = 0;
-        this.options.y = 0;
-        this.options.scaleX = 1.0;
-        this.options.scaleY = 1.0;
-        this.options.rotation = 0.0;
-        this.options.flipX = false;
-        this.options.flipY = false;
-        this.options.colorR = 255;
-        this.options.colorG = 255;
-        this.options.colorB = 255;
-        this.options.opacity = 255;
-        this.options.visible = true;
-        this.options.ZOrder = 0;
-        this.options.fileName = "";
+    function CColor(r, g, b){
+        this.A = 255;
+        this.R = r;
+        this.G = g;
+        this.B = b;
+    }
 
-        this.children           = [];
+    function PropertyGroup(){
+        this.Type="GameProject";
+        this.Name="1";
+        this.ID="a216914d-c0d7-49f6-8da3-6a19dd0dc55f";
+        this.Version="0.0.0.1";
+    }
 
-        this.setClassName = function(classname){
-            this.classname = classname;
-            this.options.classname = classname;
+    function GameProjectFile(){
+        this.group = new PropertyGroup;
+        this.project = new Content;
+        for(var i in this.project){
+            delete this.project[i];
         }
+        this.project.ctype = "GameProjectContent";
+
+        this.project.nodeTree = new Content;
+        this.project.action   = new Action;
+
+    }
+    function Content(){
+        this.name = "Node";
+        
+        this.ActionTag  = 0;
+        this.Tag        = 0;
+
+        this.Pos = new Position(0.0, 0.0);
+        this.Scale = new Scale(1.0, 1.0);
+        this.Color = new CColor(255, 255, 255);
+
+        this.RotationSkewX = 0.0;
+        this.RotationSkewY = 0.0;
+
+        this.Alpha = 255;
+
+        this.Visible = true;
+        this.ZOrder = 0;
+        this.fileName = "";
+        
+        this.ctype      = "NodeObjectData";
+
+        this.children = [];
 
         this.setFileName = function(name){
-            this.options.fileName = name;
-            this.options.fileNameData = {
+            this.fileName = name;
+            this.fileNameData = {
                 resourceType:0,
                 path:name,
                 plistFile:''
@@ -141,19 +196,17 @@ var csx = {};
 
     function Timeline(frameType){
         this.frameType  = frameType;
-        this.actionTag  = 0;
+        this.ActionTag  = 0;
         this.frames     = [];
     }
 
 
     function VisibleFrame(frameIndex, visible){
-        this.$type = "EditorCommon.JsonModel.Animation.TimeLineBoolFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.value    = visible;
     }
 
     function PositionFrame(frameIndex, tween, x, y){
-        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
@@ -161,14 +214,13 @@ var csx = {};
         this.y = y;
 
         this.applyNode = function(node){
-            node.options.x = this.x;
-            node.options.y = this.y;
+            node.Pos.X = this.x;
+            node.Pos.Y = this.y;
         }
     }
 
     function ScaleFrame(frameIndex, tween, scaleX, scaleY){
 
-        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
@@ -176,8 +228,8 @@ var csx = {};
         this.y = scaleY;
 
         this.applyNode = function(node){
-            node.options.scaleX = this.x;
-            node.options.scaleY = this.y;
+            node.Scale.ScaleX = this.x;
+            node.Scale.ScaleY = this.y;
         }
     }
 
@@ -189,8 +241,6 @@ var csx = {};
 //     }
 
     function RotationSkewFrame(frameIndex, tween, skewx, skewy){
-
-        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
@@ -198,21 +248,20 @@ var csx = {};
         this.y = skewy;
 
         this.applyNode = function(node){
-            node.options.rotationSkewX = this.x;
-            node.options.rotationSkewY = this.y;
+            node.RotationSkewX = this.x;
+            node.RotationSkewY = this.y;
         }
     }
 
     function AnchorPointFrame(frameIndex, anchorPointX, anchorPointY){
-        this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
 
         this.x = anchorPointX;
         this.y = anchorPointY;
 
         this.applyNode = function(node){
-            node.options.anchorPointX = this.x;
-            node.options.anchorPointY = this.y;
+            node.AnchorPointX = this.x;
+            node.AnchorPointY = this.y;
         }
 
     }
@@ -225,8 +274,6 @@ var csx = {};
     }
 
     function ColorFrame(frameIndex, tween, colorAlphaPercent, colorRedPercent, colorGreenPercent, colorBluePercent){
-
-        this.$type = "EditorCommon.JsonModel.Animation.TimeLineColorFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
         this.tween = tween;
 
@@ -236,10 +283,10 @@ var csx = {};
         this.blue   = colorBluePercent;
 
         this.applyNode = function(node){
-            node.options.alpha  = this.alpha;
-            node.options.red    = this.red;
-            node.options.green  = this.green;
-            node.options.blue   = this.blue;
+            node.Color.A  = node.Alpha = this.alpha;
+            node.Color.R  = this.red;
+            node.Color.G  = this.green;
+            node.Color.B  = this.blue;
         }
     }
 
@@ -307,17 +354,17 @@ var csx = {};
     function findNodeForLayer(layer, element){
         var nodes = layer.node.children;
         for(var i=0; i<nodes.length; i++){
-            if(nodes[i].options.fileName == getRelativePath(getElementName(element))){
+            if(nodes[i].fileName == getRelativePath(getElementName(element))){
                 return nodes[i];
             }
         }
 
-        var id = currentItem.element.nodeTree.options.name + "_" + (++currentItem.actionTag);
+        var id = currentItem.nodeTree.name + "_" + (++currentItem.ActionTag);
         
-        var node = new Node();
+        var node = new Content();
 //        node.setClassName("Sprite");
-//        node.options.name = "Sprite";
-        node.options.actionTag = hashCode(id);
+//        node.name = "Sprite";
+        node.ActionTag = hashCode(id);
         
         // save shape to png
         if(element.elementType == 'shape'){
@@ -325,19 +372,19 @@ var csx = {};
         }
 
 //         if(element.instanceType == 'symbol'){
-//             node.setClassName("Node");
+//             node.setClassName("Content");
 //         }
         
         //for template use, need delete when export
         node.timelines  = [];
 
-        //trace(id+" actionTag: " + node.actionTag);
+        //trace(id+" ActionTag: " + node.ActionTag);
 
         var filename = getElementName(element);
         filename = getRelativePath(filename);
         node.setFileName(filename);
-//        node.options.fileName = getRelativePath(filename);
-        trace("create node : " + node.options.fileName);
+//        node.fileName = getRelativePath(filename);
+        trace("create node : " + node.fileName);
 
 
         // add visible frame 
@@ -396,13 +443,13 @@ var csx = {};
     // Gets timeline in a specified node with specified frameType. 
     // If not exists, then create a new one and add to node.timelines. 
     function getTimelineInNode(frameType, node){
-        //trace(node.actionTag + "  get timeline : " + frameType);
+        //trace(node.ActionTag + "  get timeline : " + frameType);
         var timeline = testTimelineInNode(frameType, node);
 
         if(!timeline){
             timeline = new Timeline(frameType);
             node.timelines.push(timeline);
-            timeline.actionTag = node.options.actionTag;
+            timeline.ActionTag = node.ActionTag;
         }
         return timeline;
     }
@@ -495,6 +542,24 @@ projectXML +='\
 
         var xmlPath = getExportPath(projectName) + '.xml.ui';
         FLfile.write(xmlPath, projectXML);
+
+
+//         var x = XML("<test />");
+//         x.@data = "sdf";
+// 
+//         var result = XML("<panels />");
+//         result.appendChild(x);
+// 
+//         FLfile.write(getExportPath(projectName) + '.xml', result);
+
+
+//         var node = new Content();
+//         node.children[0] = new Content();
+//         
+//         var result = XMLSerialize.serialize(node);
+//         trace(result);
+
+//        FLfile.write(getExportPath(projectName) + '.xml', result);
     }
 
     function convertCurrentItem(){
@@ -526,14 +591,16 @@ projectXML +='\
         lib.editItem(currentItem.name);
         currentTimeline = dom.getTimeline(); 
 
-        var element = new AnimationElement();
-        element.nodeTree.options.name = currentItem.name;
-        element.action.duration = currentTimeline.frameCount;
-        element.action.speed = dom.frameRate / 60;
+        var element = new GameProjectFile();
+        element.project.nodeTree.name = currentItem.name;
+        element.project.action.duration = currentTimeline.frameCount;
+        element.project.action.speed = dom.frameRate / 60;
 
-        currentItem.element = element;
+        currentItem.nodeTree = element.project.nodeTree;
+        currentItem.action   = element.project.action;
+
         currentItem.shapeIndex = 0;
-        currentItem.actionTag = 0;
+        currentItem.ActionTag = 0;
 
 
         for(var i=currentTimeline.layers.length-1; i>=0; i--){
@@ -543,25 +610,30 @@ projectXML +='\
 
         var jsonPath = getExportJsonPath();
         var jsonName = currentItem.name.substring(currentItem.name.lastIndexOf('/')+1, currentItem.name.length) + '.json';
+        var projName = currentItem.name.substring(currentItem.name.lastIndexOf('/')+1, currentItem.name.length) + '.ccsproj';
 
         fileName = jsonPath + jsonName;
         jsonList[jsonList.length] = jsonName;
         trace("json : " + fileName);
         FLfile.write(fileName, JSON.encode(element));
+
+        fileName = jsonPath + projName;
+        trace(fileName);
+        FLfile.write(fileName, XMLSerialize.serialize(element));
     }    
 
     function convertCurrentLayer(){
         lastNode = null;
         lastFrame = null;
 
-        var node = new Node;
+        var node = new Content;
         node.setFileName("");
-        node.options.name = currentLayer.name;
-//        node.setClassName("Node");
+        node.name = currentLayer.name;
+//        node.setClassName("Content");
 
-        currentItem.element.nodeTree.children.push(node);
+        currentItem.nodeTree.children.push(node);
 
-//        trace("nodeTree.children : " + currentItem.element.nodeTree.children.length);
+//        trace("nodeTree.children : " + currentItem.nodeTree.children.length);
 
         currentLayer.node = node;
         
@@ -578,7 +650,7 @@ projectXML +='\
             var child = node.children[i];
             for(var j = 0; j<child.timelines.length; j++){
                 var timeline = child.timelines[j];
-                currentItem.element.action.timelines.push(timeline);
+                currentItem.action.timelines.push(timeline);
 
                 var firstFrame = timeline.frames[0];
                 if(firstFrame && firstFrame.applyNode)
