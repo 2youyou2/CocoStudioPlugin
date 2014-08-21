@@ -134,7 +134,7 @@ var csx = {};
         ROTATION:       "RotationFrame",
         SKEW:           "RotationSkewFrame",
         COLOR:          "ColorFrame",
-        ANCHOR:         "AnchorFrame",
+        ANCHOR:         "AnchorPointFrame",
         INNER_ACTION:   "InnerActionFrame",
         Color:          "ColorFrame"
     }
@@ -203,7 +203,7 @@ var csx = {};
         }
     }
 
-    function AnchorFrame(frameIndex, anchorPointX, anchorPointY){
+    function AnchorPointFrame(frameIndex, anchorPointX, anchorPointY){
         this.$type = "EditorCommon.JsonModel.Animation.TimeLinePointFrameSurrogate, EditorCommon";
         this.frameIndex = frameIndex;
 
@@ -433,7 +433,8 @@ var csx = {};
     }
 
     function getRelativePath(path){
-        return projectName + '/' + path;
+//        return projectName + '/' + path;
+        return path;
     }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // convert function
@@ -663,7 +664,7 @@ projectXML +='\
             anchorPoint.x = anchorPoint.x/element.hPixels;
             anchorPoint.y = (element.vPixels-anchorPoint.y)/element.vPixels;
 
-            var anchorFrame = new AnchorFrame(frameIndex, anchorPoint.x, anchorPoint.y);
+            var anchorFrame = new AnchorPointFrame(frameIndex, anchorPoint.x, anchorPoint.y);
             var anchorTimeline = getTimelineInNode(FrameType.ANCHOR, node);
 
             if(anchorTimeline.frames.length>0){
