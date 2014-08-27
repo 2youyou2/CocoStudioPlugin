@@ -9,36 +9,46 @@ var XMLSerialize;
 
 (function(){
     XMLSerialize = {
-        serialize:function(obj){
-            var xml = XML('<'+obj.constructor.name+'/>');
+        serialize:function(obj, key){
+            var name = obj.constructor.name;
+            
+            if(obj.superName != null){
+                name = obj.superName;
+            } else if(key){
+                name = key;
+            }
+                
+            var xml = XML('<'+name+'/>');
+            
             for(var p in obj){
                 var t = typeof(obj[p]);
                 
-                if(t == 'function') {
+                if(p == 'superName'){
+                    continue;
+                } else if(t == 'function') {
                 } else if (obj[p] != null && obj[p].constructor.name == 'Array'){
                     if(obj[p].length == 0)
                         continue;
 
+                    var array = obj[p]; 
                     var arrayXml = XML('<'+p+'/>');
-                    var array = obj[p];
                     for(var i = 0; i<array.length; i++){
                         arrayXml.appendChild(this.serialize(array[i]));
                     }
                     xml.appendChild(arrayXml);
                 } else if(t == 'object') {
-                    xml.appendChild(this.serialize(obj[p]));
+                    xml.appendChild(this.serialize(obj[p], p));
                 } else {
                     xml.@[p] = obj[p];
                 }
             }
-
             return xml;
         }
     }
 })();
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////`//////////////////////////////////////////////////////////////////////////
 // csx
 var csx = {};
 
@@ -98,7 +108,7 @@ var csx = {};
     var currentFrame;
     var lastFrame;
 
-    var lastNode;
+    var lastInnerNode;
 
     var projectName;
     var exportPath;
@@ -107,6 +117,18 @@ var csx = {};
     
     //////////////////////////////////////////////////////////////////////////////////////////////
     // export struct
+
+    function Solution(){
+        this.PropertyGroup = {};
+        this.PropertyGroup.Name = "Game";
+        this.PropertyGroup.Version = "0.0.0.1";
+        this.PropertyGroup.Type = "Flash";
+
+        this.SolutionFolder = {};
+        this.SolutionFolder.Group = {ctype:"ResourceGroup"};
+        this.SolutionFolder.Group.RootFolder = {Name:"."};
+    }
+
     function Position(x, y){
         this.X = x;
         this.Y = y;
@@ -124,6 +146,11 @@ var csx = {};
         this.B = b;
     }
 
+    function AnchorPoint(x, y){
+        this.ScaleX = x;
+        this.ScaleY = y;
+    }
+
     function PropertyGroup(){
         this.Type="GameProject";
         this.Name="1";
@@ -132,26 +159,34 @@ var csx = {};
     }
 
     function GameProjectFile(){
-        this.group = new PropertyGroup;
-        this.project = new Content;
-        for(var i in this.project){
-            delete this.project[i];
+        this.PropertyGroup = new PropertyGroup;
+        this.Content = {};
+        this.Content.ctype = "GameProjectContent";
+
+        this.Content.Content = {};
+
+        this.Content.Content.GameObject = new NodeObjectData;
+        this.Content.Content.Animation = new Animation;
+
+
+        this.getGameObject = function(){
+            return this.Content.Content.GameObject;
         }
-        this.project.ctype = "GameProjectContent";
 
-        this.project.nodeTree = new Content;
-        this.project.action   = new Action;
-
+        this.getAnimation = function(){
+            return this.Content.Content.Animation;
+        }
     }
-    function Content(){
-        this.name = "Node";
+    function NodeObjectData(){
+        this.Name = "Node";
         
         this.ActionTag  = 0;
         this.Tag        = 0;
 
-        this.Pos = new Position(0.0, 0.0);
+        this.Position = new Position(0.0, 0.0);
         this.Scale = new Scale(1.0, 1.0);
-        this.Color = new CColor(255, 255, 255);
+        this.CColor = new CColor(255, 255, 255);
+        this.AnchorPoint = new AnchorPoint(0.5, 0.5);
 
         this.RotationSkewX = 0.0;
         this.RotationSkewY = 0.0;
@@ -161,25 +196,36 @@ var csx = {};
         this.Visible = true;
         this.ZOrder = 0;
         this.fileName = "";
-        
-        this.ctype      = "NodeObjectData";
 
-        this.children = [];
+//         this.Width  = 0;
+//         this.Height = 0;
+        
+        /*this.ctype      = "NodeObjectData";*/
+
+        this.Children = [];
+        this.Timelines  = [];
+
+        this.IconVisible = false;
+        this.CanEdit = true;
+        this.IsAutoSize = true;
 
         this.setFileName = function(name){
+            if(name == "")
+                return;
+
             this.fileName = name;
-            this.fileNameData = {
-                resourceType:0,
-                path:name,
-                plistFile:''
+            this.FileData = {
+                Type:'Normal',
+                PathStr:name,
+                PlistFile:''
             };
         }
     }
 
-    function Action(){
-        this.duration   = 0;
-        this.speed      = 1;
-        this.timelines  = [];
+    function Animation(){
+        this.Duration   = 0;
+        this.Speed      = 1;
+        this.Timelines  = [];
     }
 
     var FrameType = {
@@ -194,99 +240,119 @@ var csx = {};
         Color:          "ColorFrame"
     }
 
-    function Timeline(frameType){
-        this.frameType  = frameType;
+    function TimelineData(frameType){
+        this.FrameType  = frameType;
         this.ActionTag  = 0;
-        this.frames     = [];
+        this.TimeLineFrames     = [];
     }
 
 
     function VisibleFrame(frameIndex, visible){
-        this.frameIndex = frameIndex;
-        this.value    = visible;
+        this.FrameIndex = frameIndex;
+        this.Value    = visible;
+
+        this.superName = "TimelineFrameData";
+        this.ctype = "TimelineBoolFrameData";
     }
 
     function PositionFrame(frameIndex, tween, x, y){
-        this.frameIndex = frameIndex;
-        this.tween = tween;
+        this.FrameIndex = frameIndex;
+        this.Tween = tween;
 
-        this.x = x;
-        this.y = y;
+        this.X = x;
+        this.Y = y;
+
+        this.superName = "TimelineFrameData";
+        this.ctype = "TimelinePointFrameData";
 
         this.applyNode = function(node){
-            node.Pos.X = this.x;
-            node.Pos.Y = this.y;
+            node.Position.X = this.X;
+            node.Position.Y = this.Y;
         }
     }
 
     function ScaleFrame(frameIndex, tween, scaleX, scaleY){
 
-        this.frameIndex = frameIndex;
-        this.tween = tween;
+        this.FrameIndex = frameIndex;
+        this.Tween = tween;
 
-        this.x = scaleX;
-        this.y = scaleY;
+        this.X = scaleX;
+        this.Y = scaleY;
+
+        this.superName = "TimelineFrameData";
+        this.ctype = "TimelinePointFrameData";
 
         this.applyNode = function(node){
-            node.Scale.ScaleX = this.x;
-            node.Scale.ScaleY = this.y;
+            node.Scale.ScaleX = this.X;
+            node.Scale.ScaleY = this.Y;
         }
     }
 
 //     function RotationFrame(frameIndex, tween, rotation){
-//         this.frameIndex = frameIndex;
+//         this.FrameIndex = frameIndex;
 //         this.tween = tween;
 // 
 //         this.rotation = rotation;
 //     }
 
     function RotationSkewFrame(frameIndex, tween, skewx, skewy){
-        this.frameIndex = frameIndex;
-        this.tween = tween;
+        this.FrameIndex = frameIndex;
+        this.Tween = tween;
 
-        this.x = skewx;
-        this.y = skewy;
+        this.X = skewx;
+        this.Y = skewy;
+
+        this.superName = "TimelineFrameData";
+        this.ctype = "TimelinePointFrameData";
 
         this.applyNode = function(node){
-            node.RotationSkewX = this.x;
-            node.RotationSkewY = this.y;
+            node.RotationSkewX = this.X;
+            node.RotationSkewY = this.Y;
         }
     }
 
     function AnchorPointFrame(frameIndex, anchorPointX, anchorPointY){
-        this.frameIndex = frameIndex;
+        this.FrameIndex = frameIndex;
 
-        this.x = anchorPointX;
-        this.y = anchorPointY;
+        this.X = anchorPointX;
+        this.Y = anchorPointY;
+
+        this.superName = "TimelineFrameData";
+        this.ctype = "TimelinePointFrameData";
 
         this.applyNode = function(node){
-            node.AnchorPointX = this.x;
-            node.AnchorPointY = this.y;
+            node.AnchorPoint.ScaleX = this.X;
+            node.AnchorPoint.ScaleY = this.Y;
         }
 
     }
 
     function InnerActionFrame(frameIndex, innerActionType, startFrame){
-        this.frameIndex = frameIndex;
+        this.FrameIndex = frameIndex;
 
         this.innerActionType = innerActionType;
         this.startFrame      = startFrame;
     }
 
     function ColorFrame(frameIndex, tween, colorAlphaPercent, colorRedPercent, colorGreenPercent, colorBluePercent){
-        this.frameIndex = frameIndex;
-        this.tween = tween;
+        this.FrameIndex = frameIndex;
+        this.Tween = tween;
 
-        this.alpha  = colorAlphaPercent;
-        this.red    = colorRedPercent;
-        this.green  = colorGreenPercent;
-        this.blue   = colorBluePercent;
+        this.Alpha  = colorAlphaPercent;
+        this.Color = {};
+        this.Color.A  = colorAlphaPercent;
+        this.Color.R    = colorRedPercent;
+        this.Color.G  = colorGreenPercent;
+        this.Color.B   = colorBluePercent;
+
+        this.superName = "TimelineFrameData";
+        this.ctype = "TimelineColorFrameData";
 
         this.applyNode = function(node){
-            node.Color.A  = node.Alpha = this.alpha;
-            node.Color.R  = this.red;
-            node.Color.G  = this.green;
-            node.Color.B  = this.blue;
+            node.CColor.A  = node.Alpha = this.Color.A;
+            node.CColor.R  = this.Color.R;
+            node.CColor.G  = this.Color.G;
+            node.CColor.B  = this.Color.B;
         }
     }
 
@@ -318,6 +384,9 @@ var csx = {};
     }
 
     function hashCode(str){
+        if(str == null)
+            str = currentItem.gameObject.Name + "_" + (++currentItem.ActionTag);
+
         var hash = 0;
         if (str.length == 0) return hash;
         for (i = 0; i < str.length; i++) {
@@ -341,7 +410,7 @@ var csx = {};
                 }
             }
             else if(element.instanceType == 'symbol'){
-                name = element.libraryItem.name + '.json';
+                name = element.libraryItem.name + '.csd';
             }
         
         }else{
@@ -352,23 +421,25 @@ var csx = {};
      
 
     function findNodeForLayer(layer, element){
-        var nodes = layer.node.children;
+        var nodes = layer.node.Children;
         for(var i=0; i<nodes.length; i++){
             if(nodes[i].fileName == getRelativePath(getElementName(element))){
                 return nodes[i];
             }
         }
 
-        var id = currentItem.nodeTree.name + "_" + (++currentItem.ActionTag);
-        
-        var node = new Content();
-//        node.setClassName("Sprite");
-//        node.name = "Sprite";
-        node.ActionTag = hashCode(id);
+        var node   = new NodeObjectData();
+        node.ctype = "SpriteObjectData";
+        node.Name  = "SpriteObject";
+
+        node.ActionTag = hashCode();
         
         // save shape to png
         if(element.elementType == 'shape'){
             saveShapeToPng(element);
+        } else if(element.instanceType == 'symbol'){
+            node.ctype = 'ProjectNodeObjectData';
+            node.Name="ProjectNodeObject";
         }
 
 //         if(element.instanceType == 'symbol'){
@@ -376,15 +447,17 @@ var csx = {};
 //         }
         
         //for template use, need delete when export
-        node.timelines  = [];
+//        node.Timelines  = [];
 
         //trace(id+" ActionTag: " + node.ActionTag);
 
         var filename = getElementName(element);
         filename = getRelativePath(filename);
         node.setFileName(filename);
+//         node.Width = element.width;
+//         node.Height = element.height;
 //        node.fileName = getRelativePath(filename);
-        trace("create node : " + node.fileName);
+/*        trace("create node : " + node.fileName);*/
 
 
         // add visible frame 
@@ -430,32 +503,38 @@ var csx = {};
 
     // test whether exist a specified timelime type in node
     function testTimelineInNode(frameType, node){
-        var timelines = node.timelines;
+        var Timelines = node.Timelines;
         var timeline;
-        for(var i=0; i<timelines.length; i++){
-            if(timelines[i].frameType == frameType){
-                timeline = timelines[i];
+        for(var i=0; i<Timelines.length; i++){
+            if(Timelines[i].FrameType == frameType){
+                timeline = Timelines[i];
             }
         }
         return timeline;
     }
 
     // Gets timeline in a specified node with specified frameType. 
-    // If not exists, then create a new one and add to node.timelines. 
+    // If not exists, then create a new one and add to node.Timelines. 
     function getTimelineInNode(frameType, node){
-        //trace(node.ActionTag + "  get timeline : " + frameType);
+//        trace(node.Name + "  get timeline : " + frameType);
         var timeline = testTimelineInNode(frameType, node);
 
         if(!timeline){
-            timeline = new Timeline(frameType);
-            node.timelines.push(timeline);
+            timeline = new TimelineData(frameType);
+            node.Timelines.push(timeline);
             timeline.ActionTag = node.ActionTag;
         }
         return timeline;
     }
 
+    function getLastFrameInTimeline(timeline){
+        if(timeline == null || timeline.TimeLineFrames.length == 0)
+            return null;
+        return timeline.TimeLineFrames[timeline.TimeLineFrames.length-1];
+    }
+
     function addFrameToTimeline(frame, timeline){
-        timeline.frames.push(frame);
+        timeline.TimeLineFrames.push(frame);
     }
 
     function getExportPath(path){
@@ -463,7 +542,7 @@ var csx = {};
     }    
 
     function getExportResourcePath(path){
-        var p = exportPath + 'Resources/';
+        var p = exportPath + 'CocosStudio/';
         if(!FLfile.exists(p)){
                 FLfile.createFolder(p);
         }
@@ -481,7 +560,8 @@ var csx = {};
 
     function getRelativePath(path){
 //        return projectName + '/' + path;
-        return path;
+        var temp = path;
+        return temp.replace('/', '\\');
     }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // convert function
@@ -507,59 +587,12 @@ var csx = {};
             convertCurrentItem();
         }
         
-        var projectXML = '\
-<?xml version="1.0"?> \n \
-<UIProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"> \n \
-    <ProjectDir></ProjectDir> \n \
-    <Version>1.0.0.0</Version> \n \
-    <Resources></Resources> \n \
-    <Name>' + projectName +'</Name> \n \
-    <JsonFileName>boy.json</JsonFileName> \n \
-    <JsonFolder></JsonFolder> \n \
-    <JsonList>\n';
 
-    for(var i=0; i<jsonList.length; i++){
-        projectXML += '        <string>'+ jsonList[i] +'</string>\n';
-    }
+        var solution = new Solution;
 
-projectXML +='\
-     </JsonList> \n \
-    <CanvasSize> \n \
-        <Width>480</Width> \n \
-        <Height>320</Height> \n \
-    </CanvasSize> \n \
-    <filePath></filePath> \n \
-    <ProjectType>UIProject</ProjectType> \n \
-    <ResRelativePath /> \n \
-    <imageFileList /> \n \
-    <imagePngList /> \n \
-    <JsonSuffix>.json</JsonSuffix> \n \
-    <CurrentUIJson>boy_1.json</CurrentUIJson> \n \
-</UIProject>';
-
-//         var projectXML = new XML("<UIProject />");
-//         projectXML.@name = '123';
-
-        var xmlPath = getExportPath(projectName) + '.xml.ui';
-        FLfile.write(xmlPath, projectXML);
-
-
-//         var x = XML("<test />");
-//         x.@data = "sdf";
-// 
-//         var result = XML("<panels />");
-//         result.appendChild(x);
-// 
-//         FLfile.write(getExportPath(projectName) + '.xml', result);
-
-
-//         var node = new Content();
-//         node.children[0] = new Content();
-//         
-//         var result = XMLSerialize.serialize(node);
-//         trace(result);
-
-//        FLfile.write(getExportPath(projectName) + '.xml', result);
+        var result = XMLSerialize.serialize(solution);
+        /*trace(result);*/
+        FLfile.write(getExportPath(projectName) + '.ccs', result);
     }
 
     function convertCurrentItem(){
@@ -592,12 +625,15 @@ projectXML +='\
         currentTimeline = dom.getTimeline(); 
 
         var element = new GameProjectFile();
-        element.project.nodeTree.name = currentItem.name;
-        element.project.action.duration = currentTimeline.frameCount;
-        element.project.action.speed = dom.frameRate / 60;
+        var gameObject = element.getGameObject();
+        var animation  = element.getAnimation();
 
-        currentItem.nodeTree = element.project.nodeTree;
-        currentItem.action   = element.project.action;
+        gameObject.Name = currentItem.name;
+        animation.Duration = currentTimeline.frameCount;
+        animation.Speed = dom.frameRate / 60;
+
+        currentItem.gameObject = gameObject;
+        currentItem.animation  = animation;
 
         currentItem.shapeIndex = 0;
         currentItem.ActionTag = 0;
@@ -608,32 +644,36 @@ projectXML +='\
             convertCurrentLayer();
         }
 
-        var jsonPath = getExportJsonPath();
-        var jsonName = currentItem.name.substring(currentItem.name.lastIndexOf('/')+1, currentItem.name.length) + '.json';
-        var projName = currentItem.name.substring(currentItem.name.lastIndexOf('/')+1, currentItem.name.length) + '.ccsproj';
-
-        fileName = jsonPath + jsonName;
-        jsonList[jsonList.length] = jsonName;
-        trace("json : " + fileName);
-        FLfile.write(fileName, JSON.encode(element));
-
-        fileName = jsonPath + projName;
-        trace(fileName);
+        fileName = fileName + '.csd';
         FLfile.write(fileName, XMLSerialize.serialize(element));
     }    
 
+    function moveTimelineToAnimation(node, animation){
+        for(var j = 0; j<node.Timelines.length; j++){
+            var timeline = node.Timelines[j];
+            animation.Timelines.push(timeline);
+
+            var firstFrame = timeline.TimeLineFrames[0];
+            if(firstFrame && firstFrame.applyNode)
+                firstFrame.applyNode(node);
+        }
+
+        delete node.Timelines;
+    }
+
     function convertCurrentLayer(){
-        lastNode = null;
+        lastInnerNode = null;
         lastFrame = null;
 
-        var node = new Content;
-        node.setFileName("");
-        node.name = currentLayer.name;
+        var node = new NodeObjectData;
+        node.ActionTag = hashCode();
+/*        node.setFileName("");*/
+        node.Name = currentLayer.name;
 //        node.setClassName("Content");
 
-        currentItem.nodeTree.children.push(node);
+        currentItem.gameObject.Children.push(node);
 
-//        trace("nodeTree.children : " + currentItem.nodeTree.children.length);
+//        trace("gameObject.Children : " + currentItem.gameObject.Children.length);
 
         currentLayer.node = node;
         
@@ -645,25 +685,17 @@ projectXML +='\
             }
         }
 
-        // move timelines from node to action
-        for(var i = 0; i<node.children.length; i++){
-            var child = node.children[i];
-            for(var j = 0; j<child.timelines.length; j++){
-                var timeline = child.timelines[j];
-                currentItem.action.timelines.push(timeline);
+        // move Timelines from node to animation
+        moveTimelineToAnimation(node, currentItem.animation);
 
-                var firstFrame = timeline.frames[0];
-                if(firstFrame && firstFrame.applyNode)
-                    firstFrame.applyNode(child);
-            }
-
-            delete child.timelines;
-            delete child.children;
+        for(var i = 0; i<node.Children.length; i++){
+            var child = node.Children[i];
+            moveTimelineToAnimation(child, currentItem.animation);
         }
     }
 
     function convertCurrentFrame(){
-        var node;
+        var innerNode;
         var element;
 
         var frameIndex = currentFrame.startFrame;
@@ -674,28 +706,51 @@ projectXML +='\
         
         if(currentFrame.elements.length != 0){
             element = currentFrame.elements[0];
-            node = findNodeForLayer(currentLayer, element);
+            innerNode = findNodeForLayer(currentLayer, element);
+            if(element.instanceType == 'symbol'){
+                innerNode.CanEdit = false;
+            }
         }
 
-        if(lastNode && lastNode != node){
+        if(lastInnerNode && lastInnerNode != innerNode){
             // add visible frame
-            var timeline = getTimelineInNode(FrameType.VISIBLE, lastNode);     
+            var timeline = getTimelineInNode(FrameType.VISIBLE, lastInnerNode);     
             addFrameToTimeline(new VisibleFrame(frameIndex, false), timeline);   
         }
 
-        if(node){
-            var visibleTimeline = getTimelineInNode(FrameType.VISIBLE, node);
-            if(visibleTimeline && visibleTimeline.frames[visibleTimeline.frames.length-1].visible == false){
+        if(innerNode){
+            var visibleTimeline = getTimelineInNode(FrameType.VISIBLE, innerNode);
+            var lastFrame = getLastFrameInTimeline(visibleTimeline);
+            if(lastFrame && lastFrame.Value == false){
                 addFrameToTimeline(new VisibleFrame(frameIndex, true), visibleTimeline);   
             }
             
+            var node = currentLayer.node;
+
             var positionFrame;
             if(element.instanceType == 'bitmap' || element.elementType == 'shape'){
                 positionFrame = new PositionFrame(frameIndex, tween, element.transformX, -element.transformY);
             }
             else if(element.instanceType == 'symbol'){
-                positionFrame = new PositionFrame(frameIndex, tween, element.x, -element.y);
+                positionFrame = new PositionFrame(frameIndex, tween, element.transformX, -element.transformY);
+
+                var point = {x:element.x,y:element.y};
+                var matrix = element.matrix;
+                matrix.tx = element.transformX;
+                matrix.ty = element.transformY;
+                var m = fl.Math.invertMatrix( matrix );
+                var difPoint = fl.Math.transformPoint(m, point);
+                difPoint.y = -difPoint.y;
+
+                var innerPositionFrame = new PositionFrame(frameIndex, tween, difPoint.x, difPoint.y);
+                addFrameToTimeline(innerPositionFrame,   getTimelineInNode(FrameType.POSITION,   innerNode));
+                
+
+//                  trace("matrix" + matrix.tx + " " + matrix.ty);
+//                  trace("normal : " + difPoint.x + "  " +  (difPoint.y));
             }
+            //trace("transform : " + element.transformX + "  " + (-element.transformY));
+            //trace("scale : " + element.scaleX + "  " + element.scaleY);
 
             var scaleFrame      = new ScaleFrame   (frameIndex, tween, element.scaleX,     element.scaleY);
             var skewFrame       = new RotationSkewFrame    (frameIndex, tween, element.skewX,      element.skewY);
@@ -706,27 +761,32 @@ projectXML +='\
 
             if(element.elementType == 'instance' /*&& element.instanceType != 'shape'*/){
                 // create anchor point frame
-                convertAnchorPointFrame(frameIndex, element, node);
+                convertAnchorPointFrame(frameIndex, element, innerNode);
 
-                // create inner action frame
-                convertInnerActionFrame(frameIndex, element, node);
+                // create inner animation frame
+                // convertInnerActionFrame(frameIndex, element, node);
 
                 // create color frame
                 convertColorFrame(frameIndex, tween, element, node);
             }
         }
 
-        lastNode = node;
+        lastInnerNode = innerNode;
     }
 
     function convertAnchorPointFrame(frameIndex, element, node){
         if(element.instanceType == 'bitmap'){
             var anchorPoint = element.getTransformationPoint();
 
+//             trace("b - anchorPointX :  " + anchorPoint.x );
+//             trace("b - anchorPointY :  " + anchorPoint.y );
+
             if(anchorPoint.x == 0 && anchorPoint.y == 0){
-                if(element.transformX != element.left )
+                if(element.transformX != element.x )
+                {
                     anchorPoint.x = element.hPixels/2;
                     anchorPoint.y = element.vPixels/2;
+                }
             }
            
 //             trace("element.transformX : " + element.transformX + "  element.left : " + element.left);
@@ -736,11 +796,14 @@ projectXML +='\
             anchorPoint.x = anchorPoint.x/element.hPixels;
             anchorPoint.y = (element.vPixels-anchorPoint.y)/element.vPixels;
 
+//             trace("a - anchorPointX :  " + anchorPoint.x );
+//             trace("a - anchorPointY :  " + anchorPoint.y );
+
             var anchorFrame = new AnchorPointFrame(frameIndex, anchorPoint.x, anchorPoint.y);
             var anchorTimeline = getTimelineInNode(FrameType.ANCHOR, node);
 
-            if(anchorTimeline.frames.length>0){
-                var lastTimelineFrame = anchorTimeline.frames[anchorTimeline.frames.length-1];
+            if(anchorTimeline.TimeLineFrames.length>0){
+                var lastTimelineFrame = anchorTimeline.TimeLineFrames[anchorTimeline.TimeLineFrames.length-1];
                 if(anchorPoint.x != lastTimelineFrame.anchorPointX && anchorPoint.y != lastTimelineFrame.anchorPointY)
                     addFrameToTimeline(anchorFrame, anchorTimeline);
             }
@@ -767,13 +830,13 @@ projectXML +='\
 
             var startFrame = element.firstFrame;
 
-            //trace("inner action :  type: " + innerActionType + "  start : " + startFrame);
+            //trace("inner animation :  type: " + innerActionType + "  start : " + startFrame);
             
             var innerActionFrame = new InnerActionFrame(frameIndex, innerActionType, startFrame);
             var innerActionTimeline =  testTimelineInNode(FrameType.INNER_ACTION, node);
 
-            if(innerActionTimeline && innerActionTimeline.frames.length>0){
-                var lastTimelineFrame = innerActionTimeline.frames[innerActionTimeline.frames.length-1];
+            if(innerActionTimeline && innerActionTimeline.TimeLineFrames.length>0){
+                var lastTimelineFrame = innerActionTimeline.TimeLineFrames[innerActionTimeline.TimeLineFrames.length-1];
                 if(innerActionType != lastTimelineFrame.innerActionType || startFrame != lastTimelineFrame.startFrame){
                     addFrameToTimeline(innerActionFrame, getTimelineInNode(FrameType.INNER_ACTION, node));
                 }
@@ -800,8 +863,8 @@ projectXML +='\
 
             addFrameToTimeline(colorFrame, getTimelineInNode(FrameType.Color, node));
 
-//             if(colorTimeline && colorTimeline.frames.length>0){
-//                 var lastTimelineFrame = colorTimeline.frames[colorTimeline.frames.length-1];
+//             if(colorTimeline && colorTimeline.TimeLineFrames.length>0){
+//                 var lastTimelineFrame = colorTimeline.TimeLineFrames[colorTimeline.TimeLineFrames.length-1];
 //                 if(a != lastTimelineFrame.alpha || r != lastTimelineFrame.red || g != lastTimelineFrame.green 
 //                     || b != lastTimelineFrame.blue){
 // 
