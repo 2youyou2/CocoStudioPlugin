@@ -165,12 +165,12 @@ var csx = {};
 
         this.Content.Content = {};
 
-        this.Content.Content.GameObject = new NodeObjectData;
+        this.Content.Content.ObjectData = new NodeObjectData;
         this.Content.Content.Animation = new Animation;
 
 
         this.getGameObject = function(){
-            return this.Content.Content.GameObject;
+            return this.Content.Content.ObjectData;
         }
 
         this.getAnimation = function(){
