@@ -13,7 +13,7 @@
 			  
 			private function addedToStageHandler():void
 			{
-				MMExecute('fl.runScript( fl.configURI + "WindowSWF/CocoStudioXPlugin/CocoStudioXPlugin.jsfl" )');
+				MMExecute('fl.runScript( fl.configURI + "WindowSWF/CocosStudioPlugin/CocosStudioPlugin.jsfl" )');
 			}
 			
 			protected function doAction(command:String):String  

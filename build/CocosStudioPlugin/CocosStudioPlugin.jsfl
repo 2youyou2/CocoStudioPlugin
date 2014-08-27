@@ -1,6 +1,6 @@
-var CocoStudioXPluginPath = fl.configURI + "WindowSWF/CocoStudioXPlugin"; 
+//var CocoStudioXPluginPath = fl.configURI + "WindowSWF/CocoStudioXPlugin"; 
 
-fl.runScript( CocoStudioXPluginPath + "/JSON.jsfl" );
+//fl.runScript( CocoStudioXPluginPath + "/JSON.jsfl" );
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
