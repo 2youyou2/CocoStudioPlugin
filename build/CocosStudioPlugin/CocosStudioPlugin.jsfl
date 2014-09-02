@@ -31,11 +31,19 @@ var XMLSerialize;
                         continue;
 
                     var array = obj[p]; 
-                    var arrayXml = XML('<'+p+'/>');
-                    for(var i = 0; i<array.length; i++){
-                        arrayXml.appendChild(this.serialize(array[i]));
+
+                    if(p == 'TimeLineFrames' || p == 'Timelines'){
+                        for(var i = 0; i<array.length; i++){
+                            xml.appendChild(this.serialize(array[i]));
+                        }
+                    } else {
+                        var arrayXml = XML('<'+p+'/>');
+                        for(var i = 0; i<array.length; i++){
+                            arrayXml.appendChild(this.serialize(array[i]));
+                        }
+                        xml.appendChild(arrayXml);
                     }
-                    xml.appendChild(arrayXml);
+                    
                 } else if(t == 'object') {
                     xml.appendChild(this.serialize(obj[p], p));
                 } else {
@@ -240,7 +248,7 @@ var csx = {};
         Color:          "ColorFrame"
     }
 
-    function TimelineData(frameType){
+    function Timeline(frameType){
         this.FrameType  = frameType;
         this.ActionTag  = 0;
         this.TimeLineFrames     = [];
@@ -251,8 +259,7 @@ var csx = {};
         this.FrameIndex = frameIndex;
         this.Value    = visible;
 
-        this.superName = "TimelineFrameData";
-        this.ctype = "TimelineBoolFrameData";
+        this.superName = "BoolFrame";
     }
 
     function PositionFrame(frameIndex, tween, x, y){
@@ -262,8 +269,7 @@ var csx = {};
         this.X = x;
         this.Y = y;
 
-        this.superName = "TimelineFrameData";
-        this.ctype = "TimelinePointFrameData";
+        this.superName = "PointFrame";
 
         this.applyNode = function(node){
             node.Position.X = this.X;
@@ -279,8 +285,7 @@ var csx = {};
         this.X = scaleX;
         this.Y = scaleY;
 
-        this.superName = "TimelineFrameData";
-        this.ctype = "TimelinePointFrameData";
+        this.superName = "PointFrame";
 
         this.applyNode = function(node){
             node.Scale.ScaleX = this.X;
@@ -302,8 +307,7 @@ var csx = {};
         this.X = skewx;
         this.Y = skewy;
 
-        this.superName = "TimelineFrameData";
-        this.ctype = "TimelinePointFrameData";
+        this.superName = "PointFrame";
 
         this.applyNode = function(node){
             node.RotationSkewX = this.X;
@@ -317,8 +321,7 @@ var csx = {};
         this.X = anchorPointX;
         this.Y = anchorPointY;
 
-        this.superName = "TimelineFrameData";
-        this.ctype = "TimelinePointFrameData";
+        this.superName = "PointFrame";
 
         this.applyNode = function(node){
             node.AnchorPoint.ScaleX = this.X;
@@ -341,12 +344,11 @@ var csx = {};
         this.Alpha  = colorAlphaPercent;
         this.Color = {};
         this.Color.A  = colorAlphaPercent;
-        this.Color.R    = colorRedPercent;
+        this.Color.R  = colorRedPercent;
         this.Color.G  = colorGreenPercent;
-        this.Color.B   = colorBluePercent;
+        this.Color.B  = colorBluePercent;
 
-        this.superName = "TimelineFrameData";
-        this.ctype = "TimelineColorFrameData";
+        this.superName = "ColorFrame";
 
         this.applyNode = function(node){
             node.CColor.A  = node.Alpha = this.Color.A;
@@ -520,7 +522,7 @@ var csx = {};
         var timeline = testTimelineInNode(frameType, node);
 
         if(!timeline){
-            timeline = new TimelineData(frameType);
+            timeline = new Timeline(frameType);
             node.Timelines.push(timeline);
             timeline.ActionTag = node.ActionTag;
         }
