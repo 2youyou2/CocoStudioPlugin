@@ -225,7 +225,7 @@ var csx = {};
             this.FileData = {
                 Type:'Normal',
                 Path:name,
-                PlistFile:''
+                Plist:''
             };
         }
     }
@@ -569,9 +569,9 @@ var csx = {};
     }
 
     function getRelativePath(path){
-//        return projectName + '/' + path;
-        var temp = path;
-        return temp.replace('/', '\\');
+        return path;
+//         var temp = path;
+//         return temp.replace('/', '\\');
     }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // convert function
@@ -602,7 +602,7 @@ var csx = {};
 
         var result = XMLSerialize.serialize(solution);
         /*trace(result);*/
-        FLfile.write(getExportPath(projectName) + '.css', result);
+        FLfile.write(getExportPath(projectName) + '.ccs', result);
     }
 
     function convertCurrentItem(){
