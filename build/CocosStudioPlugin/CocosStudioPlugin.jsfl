@@ -215,7 +215,7 @@ var csx = {};
 
         this.IconVisible = false;
         this.CanEdit = true;
-        this.IsAutoSize = true;
+        //this.IsAutoSize = true;
 
         this.setFileName = function(name){
             if(name == "")
@@ -224,7 +224,7 @@ var csx = {};
             this.fileName = name;
             this.FileData = {
                 Type:'Normal',
-                PathStr:name,
+                Path:name,
                 PlistFile:''
             };
         }
@@ -434,15 +434,23 @@ var csx = {};
         node.ctype = "SpriteObjectData";
         node.Name  = "SpriteObject";
 
+
         node.ActionTag = hashCode();
         
         // save shape to png
-        if(element.elementType == 'shape'){
-            saveShapeToPng(element);
-        } else if(element.instanceType == 'symbol'){
+        if(element.instanceType == 'symbol'){
             node.ctype = 'ProjectNodeObjectData';
             node.Name="ProjectNodeObject";
-        }
+        } else {
+            if(element.elementType == 'shape'){
+                saveShapeToPng(element);
+            } 
+
+            node.Size = {};
+            node.Size.X = element.hPixels;
+            node.Size.Y = element.vPixels;
+        }  
+        
 
 //         if(element.instanceType == 'symbol'){
 //             node.setClassName("Content");
@@ -594,7 +602,7 @@ var csx = {};
 
         var result = XMLSerialize.serialize(solution);
         /*trace(result);*/
-        FLfile.write(getExportPath(projectName) + '.ccs', result);
+        FLfile.write(getExportPath(projectName) + '.css', result);
     }
 
     function convertCurrentItem(){
