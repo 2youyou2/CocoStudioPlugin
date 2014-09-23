@@ -502,6 +502,10 @@ var csx = {};
         
         dom.convertSelectionToBitmap();
         dom.selectAll();
+        var rect = document.getSelectionRect();
+
+        shape.hPixels = rect.right - rect.left;
+        shape.vPixels = rect.bottom - rect.top;
 
         var item = dom.selection[0].libraryItem;
         item.exportToFile(bitmapName, 100);
