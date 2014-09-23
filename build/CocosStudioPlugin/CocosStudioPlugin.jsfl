@@ -201,7 +201,7 @@ var csx = {};
 
         this.Alpha = 255;
 
-        this.Visible = true;
+        this.Visible = 'True';
         this.ZOrder = 0;
         this.fileName = "";
 
@@ -213,8 +213,8 @@ var csx = {};
         this.Children = [];
         this.Timelines  = [];
 
-        this.IconVisible = false;
-        this.CanEdit = true;
+        this.IconVisible = 'False';
+        this.CanEdit = 'True';
         //this.IsAutoSize = true;
 
         this.setFileName = function(name){
@@ -474,10 +474,10 @@ var csx = {};
         var timeline = getTimelineInNode(FrameType.VISIBLE, node);
 
         if(currentFrame.startFrame != 0){
-            addFrameToTimeline(new VisibleFrame(0, false), timeline);
+            addFrameToTimeline(new VisibleFrame(0, 'False'), timeline);
         }
 
-        addFrameToTimeline(new VisibleFrame(currentFrame.startFrame, true), timeline);
+        addFrameToTimeline(new VisibleFrame(currentFrame.startFrame, 'True'), timeline);
 
         nodes[nodes.length] = node;
 
@@ -714,28 +714,28 @@ var csx = {};
 
         var frameIndex = currentFrame.startFrame;
 
-        var tween = false;
+        var tween = 'False';
         if(currentFrame.tweenType == 'motion')
-            tween = true;
+            tween = 'True';
         
         if(currentFrame.elements.length != 0){
             element = currentFrame.elements[0];
             innerNode = findNodeForLayer(currentLayer, element);
             if(element.instanceType == 'symbol'){
-                innerNode.CanEdit = false;
+                innerNode.CanEdit = 'False';
             }
         }
 
         if(lastInnerNode && lastInnerNode != innerNode){
             // add visible frame
             var timeline = getTimelineInNode(FrameType.VISIBLE, lastInnerNode);     
-            addFrameToTimeline(new VisibleFrame(frameIndex, false), timeline);   
+            addFrameToTimeline(new VisibleFrame(frameIndex, 'False'), timeline);   
         }
 
         if(innerNode){
             var visibleTimeline = getTimelineInNode(FrameType.VISIBLE, innerNode);
             var lastFrame = getLastFrameInTimeline(visibleTimeline);
-            if(lastFrame && lastFrame.Value == false){
+            if(lastFrame && lastFrame.Value == 'False'){
                 addFrameToTimeline(new VisibleFrame(frameIndex, true), visibleTimeline);   
             }
             
