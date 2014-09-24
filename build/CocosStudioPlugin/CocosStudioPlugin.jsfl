@@ -122,6 +122,10 @@ var csx = {};
     var exportPath;
 
     var jsonList;
+
+    var PI = 3.1415926535898;
+    var HALF_PI = PI/2;
+    var DOUBLE_PI = PI*2;
     
     //////////////////////////////////////////////////////////////////////////////////////////////
     // export struct
@@ -709,6 +713,9 @@ var csx = {};
     }
 
     function convertCurrentFrame(){
+        // currentLayer.node is the main node if a layer.
+        // one layer can have several innerNode
+        // if one layer has 2 different pictures in different frames, then the layer will create 2 innerNode
         var innerNode;
         var element;
 
@@ -728,15 +735,15 @@ var csx = {};
 
         if(lastInnerNode && lastInnerNode != innerNode){
             // add visible frame
-            var timeline = getTimelineInNode(FrameType.VISIBLE, lastInnerNode);     
-            addFrameToTimeline(new VisibleFrame(frameIndex, 'False'), timeline);   
+            var timeline = getTimelineInNode(FrameType.VISIBLE, lastInnerNode);
+            addFrameToTimeline(new VisibleFrame(frameIndex, 'False'), timeline);
         }
 
         if(innerNode){
             var visibleTimeline = getTimelineInNode(FrameType.VISIBLE, innerNode);
-            var lastFrame = getLastFrameInTimeline(visibleTimeline);
-            if(lastFrame && lastFrame.Value == 'False'){
-                addFrameToTimeline(new VisibleFrame(frameIndex, true), visibleTimeline);   
+            var lastVisibleFrame = getLastFrameInTimeline(visibleTimeline);
+            if(lastVisibleFrame && lastVisibleFrame.Value == 'False'){
+                addFrameToTimeline(new VisibleFrame(frameIndex, true), visibleTimeline);
             }
             
             var node = currentLayer.node;
@@ -758,7 +765,6 @@ var csx = {};
 
                 var innerPositionFrame = new PositionFrame(frameIndex, tween, difPoint.x, difPoint.y);
                 addFrameToTimeline(innerPositionFrame,   getTimelineInNode(FrameType.POSITION,   innerNode));
-                
 
 //                  trace("matrix" + matrix.tx + " " + matrix.ty);
 //                  trace("normal : " + difPoint.x + "  " +  (difPoint.y));
@@ -766,12 +772,69 @@ var csx = {};
             //trace("transform : " + element.transformX + "  " + (-element.transformY));
             //trace("scale : " + element.scaleX + "  " + element.scaleY);
 
+
             var scaleFrame      = new ScaleFrame   (frameIndex, tween, element.scaleX,     element.scaleY);
-            var skewFrame       = new RotationSkewFrame    (frameIndex, tween, element.skewX,      element.skewY);
+
+            var skewx = element.skewX;
+            var skewy = element.skewY;
+
+            if(lastFrame != null && lastFrame.tweenType == 'motion'){
+                var lastElement = lastFrame.elements[0];
+
+                var lastFLSkewX = lastElement.skewX >= 0 ? lastElement.skewX : 360 + lastElement.skewX ;
+                var lastFLSkewY = lastElement.skewY >= 0 ? lastElement.skewY : 360 + lastElement.skewY ;
+
+                var flSkewX = element.skewX >= 0 ? element.skewX : 360 + element.skewX;
+                var flSkewY = element.skewY >= 0 ? element.skewY : 360 + element.skewY;
+                
+                var skewTimeline = getTimelineInNode(FrameType.SKEW, node);
+                var lastSkewX = 0; var lastSkewY = 0;
+                var lastSkewFrame = null;
+
+                if(skewTimeline.TimeLineFrames.length > 0){
+                    lastSkewFrame = skewTimeline.TimeLineFrames[skewTimeline.TimeLineFrames.length - 1];
+                    lastSkewX = lastSkewFrame.X;
+                    lastSkewY = lastSkewFrame.Y;
+                }
+                   
+                var difX = flSkewX - lastFLSkewX;
+                var difY = flSkewY - lastFLSkewY;
+                trace('Y: ' + flSkewY + ',  ' + lastFLSkewY);
+                if(lastFrame.motionTweenRotate == 'auto'){
+                    if(Math.abs(difX)>180)
+                        difX = difX > 0 ? difX - 360 : difX + 360;
+                    if(Math.abs(difY)>180)
+                        difY = difY > 0 ? difY - 360 : difY + 360;
+                }
+                if(lastFrame.motionTweenRotate == 'clockwise'){
+                    if(difX < 0)
+                        difX += 360;
+                    difX += 360 * lastFrame.motionTweenRotateTimes;
+                    if(difY < 0)
+                        difY += 360;
+                    difY += 360 * lastFrame.motionTweenRotateTimes;
+                }
+                if(lastFrame.motionTweenRotate == 'counter-clockwise'){
+                    if(difX > 0)
+                        difX -= 360;
+                    difX -= 360 * lastFrame.motionTweenRotateTimes;
+                    if(difY > 0)
+                        difY -= 360;
+                    difY -= 360 * lastFrame.motionTweenRotateTimes;
+                }
+
+                skewx = lastSkewX+difX;
+                skewy = lastSkewY+difY;
+
+                 trace('skewy: ' + skewy + ' lastSkewY : ' + lastSkewY + '   difY : ' + difY);
+            }
+            
+            var skewFrame = new RotationSkewFrame    (frameIndex, tween, skewx, skewy);
 
             addFrameToTimeline(positionFrame,   getTimelineInNode(FrameType.POSITION,   node));
             addFrameToTimeline(scaleFrame,      getTimelineInNode(FrameType.SCALE,      node));
             addFrameToTimeline(skewFrame,       getTimelineInNode(FrameType.SKEW,       node));
+
 
             if(element.elementType == 'instance' /*&& element.instanceType != 'shape'*/){
                 // create anchor point frame
