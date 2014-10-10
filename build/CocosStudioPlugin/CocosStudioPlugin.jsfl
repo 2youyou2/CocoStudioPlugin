@@ -1,8 +1,3 @@
-//var CocoStudioXPluginPath = fl.configURI + "WindowSWF/CocoStudioXPlugin"; 
-
-//fl.runScript( CocoStudioXPluginPath + "/JSON.jsfl" );
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // XMLSerialize
 var XMLSerialize;
@@ -64,46 +59,6 @@ var csx = {};
     
     // 
     var TEMP_ITEM_NAME = "CocoStudioXTemp";
-
-    var EXPORT_PATH = "exportPath";
-
-
-    // init configuration
-//     var Config = {};
-// 
-//     (function(){
-//         var configXML;
-// 
-//         var configPath = CocoStudioXPluginPath + '/config.xml';
-// 
-//         if(FLfile.exists(configPath)){
-//             var str = FLfile.read(configPath);
-//             configXML = new XML(str);
-//         }else{
-//             configXML = <config />;
-//         }
-//         fl.trace(configXML);
-// 
-//         function saveConfig(){
-//             FLfile.write(configPath, configXML);
-//         }
-// 
-//         Config.ExportPath = {
-//             get:function(){
-//                 return configXML[EXPORT_PATH];
-//             },
-//             set:function(path){
-//                 configXML.@EXPORT_PATH = path;
-//                 fl.trace(configXML[EXPORT_PATH]);
-//                 saveConfig();
-//             }
-//         }
-// 
-//         
-//         
-//     })();
-
-
 
     var dom;
     var lib;
