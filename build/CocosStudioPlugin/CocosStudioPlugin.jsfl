@@ -642,6 +642,7 @@ var csx = {};
         node.ActionTag = hashCode();
 /*        node.setFileName("");*/
         node.Name = currentLayer.name;
+		node.ctype = "SingleNodeObjectData";
 //        node.setClassName("Content");
 
         currentItem.gameObject.Children.push(node);
