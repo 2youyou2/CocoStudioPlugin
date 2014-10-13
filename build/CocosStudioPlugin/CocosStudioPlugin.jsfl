@@ -119,7 +119,7 @@ var csx = {};
     }
 
     function PropertyGroup(){
-        this.Type="GameProject";
+        this.Type="Node";
         this.Name="1";
         this.ID="a216914d-c0d7-49f6-8da3-6a19dd0dc55f";
         this.Version="0.0.0.1";
