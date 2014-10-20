@@ -88,7 +88,7 @@ var csx = {};
     function Solution(){
         this.PropertyGroup = {};
         this.PropertyGroup.Name = "Game";
-        this.PropertyGroup.Version = "0.0.0.1";
+        this.PropertyGroup.Version = "2.0.0.0";
         this.PropertyGroup.Type = "Flash";
 
         this.SolutionFolder = {};
@@ -699,7 +699,7 @@ var csx = {};
             var visibleTimeline = getTimelineInNode(FrameType.VISIBLE, innerNode);
             var lastVisibleFrame = getLastFrameInTimeline(visibleTimeline);
             if(lastVisibleFrame && lastVisibleFrame.Value == 'False'){
-                addFrameToTimeline(new VisibleFrame(frameIndex, true), visibleTimeline);
+                addFrameToTimeline(new VisibleFrame(frameIndex, 'True'), visibleTimeline);
             }
             
             var node = currentLayer.node;
