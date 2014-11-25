@@ -214,10 +214,10 @@ var csx = {};
     }
 
 
-	function floatequals(decimalx, decimaly){
-		var diff = arguments[2] || 0.0001;
-		return Math.abs(decimalx-decimaly) < diff;
-	}
+    function floatequals(decimalx, decimaly){
+	var diff = arguments[2] || 0.0001;
+	return Math.abs(decimalx-decimaly) < diff;
+    }
 	
 	
 	
@@ -651,7 +651,7 @@ var csx = {};
             convertCurrentLayer();
         }
 		
-	  clearDuplicateFrame(element.getAnimation());
+	clearDuplicateFrame(element.getAnimation());
         fileName = fileName + '.csd';
         FLfile.write(fileName, XMLSerialize.serialize(element));
     }    
@@ -659,22 +659,22 @@ var csx = {};
     function clearDuplicateFrame(animation){
         for( var i=0; i < animation.Timelines.length; i++){
             var timeline = animation.Timelines[i];
-		var framescount =  timeline.TimeLineFrames.length;
+	    var framescount =  timeline.TimeLineFrames.length;
             var j = framescount - 2;
-		var newframes = [];;
+		var newframes = [];
 		for( ; j >0; j--){
-			var curr = timeline.TimeLineFrames[j];
-			var pre  = timeline.TimeLineFrames[j-1];
-			var suff = timeline.TimeLineFrames[j+1];
-			if(!curr.equals(pre) || !curr.equals(suff)){
-				newframes.unshift(curr);
-			}
+		    var curr = timeline.TimeLineFrames[j];
+		    var pre  = timeline.TimeLineFrames[j-1];
+		    var suff = timeline.TimeLineFrames[j+1];
+		    if(!curr.equals(pre) || !curr.equals(suff)){
+			newframes.unshift(curr);
+		    }
 		}
 		if(framescount > 0){
-			newframes.unshift(timeline.TimeLineFrames[0]);
+	            newframes.unshift(timeline.TimeLineFrames[0]);
 		}
 		if(framescount > 1){
-			newframes.push(timeline.TimeLineFrames[framescount-1]);
+		    newframes.push(timeline.TimeLineFrames[framescount-1]);
 		}
             timeline.TimeLineFrames = newframes;
         }
