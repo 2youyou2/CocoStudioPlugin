@@ -214,11 +214,21 @@ var csx = {};
     }
 
 
+    function floatequals(decimalx, decimaly){
+	var diff = arguments[2] || 0.0001;
+	return Math.abs(decimalx-decimaly) < diff;
+    }
+	
+	
+	
     function VisibleFrame(frameIndex, visible){
         this.FrameIndex = frameIndex;
         this.Value    = visible;
 
         this.superName = "BoolFrame";
+        this.equals = function(vframe){
+            return this.Value == vframe.Value;
+        }
     }
 
     function PositionFrame(frameIndex, tween, x, y){
@@ -233,6 +243,10 @@ var csx = {};
         this.applyNode = function(node){
             node.Position.X = this.X;
             node.Position.Y = this.Y;
+        }
+        
+        this.equals = function(pframe){
+            return floatequals(this.X, pframe.X) && floatequals(this.Y, pframe.Y) && this.Tween == pframe.Tween;
         }
     }
 
@@ -249,6 +263,10 @@ var csx = {};
         this.applyNode = function(node){
             node.Scale.ScaleX = this.X;
             node.Scale.ScaleY = this.Y;
+        }
+        
+        this.equals = function(pframe){
+            return floatequals(this.X, pframe.X) && floatequals(this.Y, pframe.Y) && this.Tween == pframe.Tween;
         }
     }
 
@@ -272,6 +290,10 @@ var csx = {};
             node.RotationSkewX = this.X;
             node.RotationSkewY = this.Y;
         }
+        
+        this.equals = function(pframe){
+            return floatequals(this.X, pframe.X) && floatequals(this.Y, pframe.Y) && this.Tween == pframe.Tween;
+        }
     }
 
     function AnchorPointFrame(frameIndex, anchorPointX, anchorPointY){
@@ -286,7 +308,10 @@ var csx = {};
             node.AnchorPoint.ScaleX = this.X;
             node.AnchorPoint.ScaleY = this.Y;
         }
-
+        
+       this.equals = function(pframe){
+            return floatequals(this.X, pframe.X) && floatequals(this.Y, pframe.Y);
+        }
     }
 
     function InnerActionFrame(frameIndex, innerActionType, startFrame){
@@ -315,6 +340,15 @@ var csx = {};
             node.CColor.G  = this.Color.G;
             node.CColor.B  = this.Color.B;
         }
+        
+        this.equals = function(cframe){
+            return this.Color.A == cframe.Color.A 
+                && this.Color.R == cframe.Color.R
+                && this.Color.G == cframe.Color.G
+                && this.Color.B == cframe.Color.B
+                && this.Alpha   == cframe.Alpha
+                && this.Tween   == cframe.Tween;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -322,14 +356,14 @@ var csx = {};
     //////////////////////////////////////////////////////////////////////////////////////////////
     // help function
     function trace(){
-	    var _str = "";
-	    for(var _i = 0;_i < arguments.length;_i ++){
-		    if(_i!=0){
-			    _str += ", ";
-		    }
-		    _str += arguments[_i];
-	    }
-	    fl.trace(_str);
+        var _str = "";
+        for(var _i = 0;_i < arguments.length;_i ++){
+            if(_i!=0){
+                _str += ", ";
+            }
+            _str += arguments[_i];
+        }
+        fl.trace(_str);
     }
 
     csx.browseFolder = function(){
@@ -546,7 +580,7 @@ var csx = {};
 
         projectName = dom.name.substring(0, dom.name.lastIndexOf('.'));
         exportPath = path + '/' + projectName + '/';
-	    trace("export Path : " + exportPath);
+        trace("export Path : " + exportPath);
 
         lib = dom.library;
 
@@ -616,10 +650,35 @@ var csx = {};
             currentLayer = currentTimeline.layers[i];
             convertCurrentLayer();
         }
-
+		
+	clearDuplicateFrame(element.getAnimation());
         fileName = fileName + '.csd';
         FLfile.write(fileName, XMLSerialize.serialize(element));
     }    
+
+    function clearDuplicateFrame(animation){
+        for( var i=0; i < animation.Timelines.length; i++){
+            var timeline = animation.Timelines[i];
+	    var framescount =  timeline.TimeLineFrames.length;
+            var j = framescount - 2;
+		var newframes = [];
+		for( ; j >0; j--){
+		    var curr = timeline.TimeLineFrames[j];
+		    var pre  = timeline.TimeLineFrames[j-1];
+		    var suff = timeline.TimeLineFrames[j+1];
+		    if(!curr.equals(pre) || !curr.equals(suff)){
+			newframes.unshift(curr);
+		    }
+		}
+		if(framescount > 0){
+	            newframes.unshift(timeline.TimeLineFrames[0]);
+		}
+		if(framescount > 1){
+		    newframes.push(timeline.TimeLineFrames[framescount-1]);
+		}
+            timeline.TimeLineFrames = newframes;
+        }
+    }
 
     function moveTimelineToAnimation(node, animation){
         for(var j = 0; j<node.Timelines.length; j++){
@@ -642,7 +701,7 @@ var csx = {};
         node.ActionTag = hashCode();
 /*        node.setFileName("");*/
         node.Name = currentLayer.name;
-		node.ctype = "SingleNodeObjectData";
+        node.ctype = "SingleNodeObjectData";
 //        node.setClassName("Content");
 
         currentItem.gameObject.Children.push(node);
@@ -887,9 +946,9 @@ var csx = {};
         if(element.instanceType == 'symbol'){
             
             var a = Math.round(2.55*element.colorAlphaPercent);
-		    var r = Math.round(2.55*element.colorRedPercent);
-		    var g = Math.round(2.55*element.colorGreenPercent);
-		    var b = Math.round(2.55*element.colorBluePercent);
+            var r = Math.round(2.55*element.colorRedPercent);
+            var g = Math.round(2.55*element.colorGreenPercent);
+            var b = Math.round(2.55*element.colorBluePercent);
 
             var colorFrame = new ColorFrame(frameIndex, tween, a, r, g, b);
             var colorTimeline =  testTimelineInNode(FrameType.Color, node);
